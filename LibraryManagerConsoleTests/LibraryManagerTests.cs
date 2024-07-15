@@ -80,8 +80,6 @@ namespace LibraryManagerConsoleTests
                 .WithReleaseYear(1851)
                 .WithEdition(1)
                 .Build();
-            var firstAttemptResult = _libraryManager.AddBook(newBook);
-            Assert.That(firstAttemptResult.Success, Is.True);
 
             Book newBookTwo = new BookModelBuilder()
                 .WithTitle("The Catcher in the Rye")
@@ -133,8 +131,6 @@ namespace LibraryManagerConsoleTests
             // Arrange
             BookModelBuilder bookModelBuilder = new BookModelBuilder()
                 .WithTitle("The Great Gatsby")
-            BookModelBuilder modelBuilder = new BookModelBuilder()
-                .WithTitle(bookTitle)
                 .WithAuthor("F. Scott Fitzgerald")
                 .WithReleaseYear(1925);
 
@@ -149,8 +145,6 @@ namespace LibraryManagerConsoleTests
             // Act
             BookManagementResult addFirstEditionResult = _libraryManagerWithSamples.AddBook(firstEditionBook);
             BookManagementResult addSecondEditionResult = _libraryManagerWithSamples.AddBook(secondEditionBook);
-
-            List<Book> books = _libraryManager.GetBooks();
 
             // Assert
             Assert.That(addFirstEditionResult.Success, Is.True);
@@ -228,7 +222,191 @@ namespace LibraryManagerConsoleTests
             Assert.That(addResult.Message, Is.EqualTo($"{newBook}: Added successfully."));
 
             Assert.That(removeResult.Success, Is.True);
-            Assert.That(removeResult.Message, Is.EqualTo($"Book with id {newBook.Id} removed successfully"));
+            Assert.That(removeResult.Message, Is.EqualTo($"Book with id {addedBook.Id} removed successfully."));
+        }
+
+        [Test]
+        [Description("Book can be added correctly to an empty library as the first entry")]
+        public void LibraryManagerTests_TestCase_006()
+        {
+            // Arrange
+            const int firstLibraryManagerId = 1;
+                   
+            Book newBook = new BookModelBuilder()
+                .WithTitle("The Picture of Dorian Gray")
+                .WithAuthor("Oscar Wilde")
+                .WithReleaseYear(1890)
+                .WithEdition(1)
+                .Build();
+
+            // Act
+            BookManagementResult addResult = _emptyLibraryManager.AddBook(newBook);
+
+            // Assert
+            Assert.That(addResult.Success, Is.True);
+
+            List<Book> books = _emptyLibraryManager.GetBooks();
+            Book addedBook = books.First(book => book.Title == newBook.Title);
+
+            Assert.That(addedBook.Id, Is.EqualTo(firstLibraryManagerId));
+            Assert.That(addedBook.Title, Is.EqualTo(newBook.Title));
+            Assert.That(addedBook.Author, Is.EqualTo(newBook.Author));
+            Assert.That(addedBook.ReleaseYear, Is.EqualTo(newBook.ReleaseYear));
+            Assert.That(addedBook.Edition, Is.EqualTo(newBook.Edition));
+            Assert.That(addedBook.BookAge, Is.EqualTo(newBook.BookAge));
+
+            string expectedMessage = $"{addedBook}: Added successfully.";
+
+            Assert.That(addResult.Message.Contains(expectedMessage), Is.True, $"Expected message not found: '{expectedMessage}'");
+        }
+
+        [Test]
+        [Description("Book that already exists in the library is not added and an error message is returned accordingly")]
+        public void LibraryManagerTests_TestCase_007()
+        {
+            // Arrange
+            List<Book> books = _libraryManagerWithSamples.GetBooks();
+            Book existingBook = books.First();
+
+            // Act
+            BookManagementResult addBookResult = _libraryManagerWithSamples.AddBook(existingBook);
+
+            // Assert
+            Assert.That(addBookResult.Success, Is.False);
+
+            string expectedMessage = $"{existingBook}: Already exists.";
+
+            Assert.That(addBookResult.Message.Contains(expectedMessage), Is.True, $"Expected message not found: '{expectedMessage}'");
+        }
+
+        [Test]
+        [Description("Book that does not exist in the Library is not removed and an error message is returned accordingly")]
+        public void LibraryManagerTests_TestCase_008()
+        {
+            // Arrange
+            const int invalidBookId = -1;
+
+            // Act
+            BookManagementResult removeBookResult = _libraryManagerWithSamples.RemoveBook(invalidBookId);
+
+            // Assert
+            Assert.That(removeBookResult.Success, Is.False);
+
+            string expectedMessage = $"Book with id {invalidBookId} not found";
+
+            Assert.That(removeBookResult.Message.Contains(expectedMessage), Is.True, $"Expected message not found: '{expectedMessage}'");
+        }
+
+        [Test]
+        [Description("All Books can be removed from a library")]
+        public void LibraryManagerTests_TestCase_009()
+        {
+            // Arrange
+            LibraryManager localLibraryManager = new LibraryManager();
+            AddSampleBooks(localLibraryManager);
+
+            int inittialLibraryBookCount = localLibraryManager.GetBooks().Count;
+
+            // Act
+            BookManagementResult removeAllBooksResult = localLibraryManager.RemoveAllBooks();
+
+            // Assert
+            Assert.That(removeAllBooksResult.Success, Is.True);
+
+            int LibraryBookCountAfterRemoval = localLibraryManager.GetBooks().Count;
+
+            Assert.That(inittialLibraryBookCount, Is.GreaterThan(0));
+            Assert.That(LibraryBookCountAfterRemoval, Is.EqualTo(0));
+
+            string expectedMessage = $"All books have been removed successfully.";
+
+            Assert.That(removeAllBooksResult.Message.Contains(expectedMessage), Is.True, $"Expected message not found: '{expectedMessage}'");
+        }
+
+        [Test]
+        [Description("Book cannot be searched with an unavailable title and an error message is returned accordingly")]
+        public void LibraryManagerTests_TestCase_010()
+        {
+            // Arrange
+            const string invalidBookTitle = "Fake Book Title For Testing Purposes Only";
+
+            // Act
+            BookSearchResult searchInvalidBookTitleResult = _libraryManagerWithSamples.SearchByTitle(invalidBookTitle);
+
+            // Assert
+            Assert.That(searchInvalidBookTitleResult.Success, Is.False);
+
+            string expectedMessage = $"No books found with title: {invalidBookTitle}";
+
+            Assert.That(searchInvalidBookTitleResult.Message.Contains(expectedMessage), Is.True, $"Expected message not found: '{expectedMessage}'");
+        }
+
+        [Test]
+        [Description("Book cannot be searched with an unavailable author name and an error message is returned accordingly")]
+        public void LibraryManagerTests_TestCase_011()
+        {
+            // Arrange
+            const string invalidBookAuthor = "Fake Book Author For Testing Purposes Only";
+
+            // Act
+            BookSearchResult searchInvalidBookAuthorResult = _libraryManagerWithSamples.SearchByAuthor(invalidBookAuthor);
+
+            // Assert
+            Assert.That(searchInvalidBookAuthorResult.Success, Is.False);
+
+            string expectedMessage = $"No books found with author: {invalidBookAuthor}";
+
+            Assert.That(searchInvalidBookAuthorResult.Message.Contains(expectedMessage), Is.True, $"Expected message not found: '{expectedMessage}'");
+        }
+
+        [Test]
+        [Description("Book that does not exist in the Library cannot be search to get all editions and an error message is returned accordingly")]
+        public void LibraryManagerTests_TestCase_012()
+        {
+            // Arrange
+            Book unavailableBook = new BookModelBuilder()
+                 .WithTitle("Fake Book Title For Testing Purposes Only")
+                 .WithAuthor("Fake Book Author For Testing Purposes Only")
+                 .WithReleaseYear(2001)
+                 .WithEdition(3)
+                 .Build();
+
+            // Act
+            BookSearchResult searchUnavailableBookResult = _libraryManagerWithSamples.SearchAllEditionsByBook(unavailableBook);
+
+            // Assert
+            Assert.That(searchUnavailableBookResult.Success, Is.False);
+
+            string expectedMessage = $"No editions found for book: {unavailableBook.ToString()}";
+
+            Assert.That(searchUnavailableBookResult.Message.Contains(expectedMessage), Is.True, $"Expected message not found: '{expectedMessage}'");
+        }
+
+        public void AddSampleBooks(LibraryManager libraryManager)
+        {
+            libraryManager.AddBook(new BookModelBuilder()
+                 .WithTitle("The Hobbit")
+                 .WithAuthor("J.R.R. Tolkien")
+                 .WithReleaseYear(1937)
+                 .WithEdition(1)
+                 .Build()
+             );
+
+            libraryManager.AddBook(new BookModelBuilder()
+                .WithTitle("The Lord of the Rings")
+                .WithAuthor("J.R.R. Tolkien")
+                .WithReleaseYear(1954)
+                .WithEdition(1)
+                .Build()
+            );
+
+            libraryManager.AddBook(new BookModelBuilder()
+                .WithTitle("iRobot")
+                .WithAuthor("Isaac Asimov")
+                .WithReleaseYear(1950)
+                .WithEdition(1)
+                .Build()
+            );
         }
     }
 }
