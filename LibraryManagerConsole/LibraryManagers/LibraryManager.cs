@@ -1,35 +1,13 @@
 using LibraryManagerConsole.Models;
+using System.Net;
 
-namespace LibraryManagerConsole.LibraryManager
+namespace LibraryManagerConsole.LibraryManagers
 {
     public class LibraryManager
     {
         private readonly List<Book> _books = [];
 
-        public LibraryManager()
-        {
-            AddBook(new BookModelBuilder()
-                .WithTitle("The Hobbit")
-                .WithAuthor("J.R.R. Tolkien")
-                .WithReleaseYear(1937)
-                .WithEdition(1)
-                .Build()
-            );
-            AddBook(new BookModelBuilder()
-                .WithTitle("The Lord of the Rings")
-                .WithAuthor("J.R.R. Tolkien")
-                .WithReleaseYear(1954)
-                .WithEdition(1)
-                .Build()
-            );
-            AddBook(new BookModelBuilder()
-                .WithTitle("iRobot")
-                .WithAuthor("Isaac Asimov")
-                .WithReleaseYear(1950)
-                .WithEdition(1)
-                .Build()
-            );
-        }
+        public LibraryManager() { }
 
         public BookManagementResult AddBook(Book book)
         {
@@ -38,7 +16,7 @@ namespace LibraryManagerConsole.LibraryManager
                     libraryBook.ReleaseYear == book.ReleaseYear &&
                     libraryBook.Edition == book.Edition))
             {
-                return new BookManagementResult($"{book} already exists", false);
+                return new BookManagementResult($"{book}: Already exists.", false);
             }
 
             Book bookToAdd = new()
@@ -52,7 +30,7 @@ namespace LibraryManagerConsole.LibraryManager
 
             _books.Add(bookToAdd);
 
-            return new BookManagementResult($"{bookToAdd} added successfully", true);
+            return new BookManagementResult($"{bookToAdd}: Added successfully.", true);
         }
 
         public BookManagementResult RemoveBook(int bookId)
@@ -64,7 +42,21 @@ namespace LibraryManagerConsole.LibraryManager
                 return new BookManagementResult($"Book with id {bookId} not found", false);
             }
 
-            return new BookManagementResult($"Book with id {bookId} removed successfully", true);
+            return new BookManagementResult($"Book with id {bookId} removed successfully.", true);
+        }
+
+        public BookManagementResult RemoveAllBooks()
+        {
+            _books.Clear();
+
+            int booksInLibrary = _books.Count;
+
+            if (booksInLibrary > 0)
+            {
+                return new BookManagementResult($"Not all books were removed successfully", false);
+            }
+
+            return new BookManagementResult($"All books have been removed successfully.", true);
         }
 
         public BookSearchResult SearchByTitle(string title)
@@ -86,6 +78,22 @@ namespace LibraryManagerConsole.LibraryManager
             if (books.Count == 0)
             {
                 return new BookSearchResult(books, $"No books found with author: {author}", false);
+            }
+
+            return new BookSearchResult(books, "Books found", true);
+        }
+
+        public BookSearchResult SearchAllEditionsByBook(Book myBook)
+        {
+            var books = _books
+                .Where(book => book.Title == myBook.Title
+                && book.Author == myBook.Author
+                && book.ReleaseYear == myBook.ReleaseYear)
+                .ToList();
+
+            if (books.Count == 0)
+            {
+                return new BookSearchResult(books, $"No editions found for book: {myBook.ToString()}", false);
             }
 
             return new BookSearchResult(books, "Books found", true);
