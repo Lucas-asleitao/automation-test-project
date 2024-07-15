@@ -1,4 +1,7 @@
-﻿namespace LibraryManagerConsole
+﻿using LibraryManagerConsole.Models;
+using LibraryManagerConsole.LibraryManagers;
+
+namespace LibraryManagerConsole
 {
     class Program
     {
@@ -10,7 +13,7 @@
 				In a real application we would want to persist the books to a database or file so they can be loaded each time the program is run
 				However for the scope of this test we do not need the added books to persist between runs, only when running unit tests
 			*/
-            var libraryManager = new LibraryManager.LibraryManager();
+            LibraryManager libraryManager = new LibraryManager();
 
             if (args.Length == 0)
             {
@@ -27,14 +30,14 @@
                         return;
                     }
 
-                    var book = new Models.BookModelBuilder()
+                    Book book = new Models.BookModelBuilder()
                         .WithTitle(args[1])
                         .WithAuthor(args[2])
                         .WithReleaseYear(int.Parse(args[3]))
                         .WithEdition(int.Parse(args[4]))
                         .Build();
 
-                    var addResult = libraryManager.AddBook(book);
+                    BookManagementResult addResult = libraryManager.AddBook(book);
 
                     Console.WriteLine(addResult.Message);
                     break;
@@ -45,12 +48,12 @@
                         return;
                     }
 
-                    var removeResult = libraryManager.RemoveBook(int.Parse(args[1]));
+                    BookManagementResult removeResult = libraryManager.RemoveBook(int.Parse(args[1]));
 
                     Console.WriteLine(removeResult.Message);
                     break;
                 case "list":
-                    foreach (var result in libraryManager.GetBooks())
+                    foreach (Book result in libraryManager.GetBooks())
                     {
                         Console.WriteLine(result.ToString());
                     }
@@ -63,7 +66,7 @@
                         return;
                     }
 
-                    var searchResult = args[1] switch
+                    BookSearchResult searchResult = args[1] switch
                     {
                         "title" => libraryManager.SearchByTitle(args[2]),
                         "author" => libraryManager.SearchByAuthor(args[2]),
@@ -72,7 +75,7 @@
 
                     if (searchResult.Success)
                     {
-                        foreach (var result in searchResult.Books)
+                        foreach (Book result in searchResult.Books)
                         {
                             Console.WriteLine(result);
                         }
